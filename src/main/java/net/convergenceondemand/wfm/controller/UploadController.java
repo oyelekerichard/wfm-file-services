@@ -74,6 +74,7 @@ public class UploadController {
                 public void run() {
                     try {
 //                        uploadService.processMAPReports(startDate, endDate, email);
+
                         uploadService.processMAPReportsV1(startDate, endDate, email);
                     } catch (IOException | EmailException ex) {
                         Logger.getLogger(UploadController.class.getName()).log(Level.SEVERE, null, ex);
