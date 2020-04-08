@@ -75,6 +75,31 @@ public class WFMService {
         }
         return null;
     }
+    
+    public List<MeterRequestData> getMeterRequestDataV1(String startDate, String endDate) {
+        EntityManager em = dbAccessBean.getEmf().createEntityManager();
+        try {
+            String sql = "SELECT id, disco, business_unit, account_number, account_name, "
+                    + "address_line_1, address_line_2, house_number, bus_stop, land_mark,"
+                    + "lga_of_occupant, name_of_occupant, occupant_phone, email_address, feeder, "
+                    + "distribution_transformer, upriser, gps_coordinate, old_meter_number, type_of_application,"
+                    + "type_of_meter, application_number, ticket_id, submission_date ,"
+                    + "(SELECT name FROM queue_type WHERE id = "
+                    + "(SELECT queue_type_id FROM work_order WHERE ticket_id = 1))AS queueType,"
+                    + "(SELECT description FROM work_order_status WHERE name = "
+                    + "(SELECT current_status FROM work_order WHERE ticket_id = 1)) AS ticket_status "
+                    + " from meter_request_data where submission_date "
+                    + "between CAST(?1 AS DATE) AND DATE_ADD(CAST(?2 AS DATE), INTERVAL 1 day)";
+            
+            Query query = em.createNativeQuery(sql, MeterRequestData.class);
+            query.setParameter(1, startDate).setParameter(2, endDate);
+            return (List<MeterRequestData>) query.getResultList();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public WorkOrder findWorkOrderbyTicketId(int workOrderTicketId) {
         EntityManager em = dbAccessBean.getEmf().createEntityManager();

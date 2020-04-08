@@ -215,5 +215,114 @@ public class UploadService {
         emm.sendAnEmail("a12wq_minions", "MAP Report Download", email, "Your MAP report is now ready. Please find attached the requested report", localfile, null);
 
     }
+    
+        public void processMAPReportsV1(String startDate, String endDate, String email) throws FileNotFoundException, IOException, EmailException {
+        long started = System.currentTimeMillis();
+        System.out.println("MAP Meter Request Data Download");
+        System.out.println("Email report will be sent to :: " + email);
+
+        SXSSFWorkbook workbook = new SXSSFWorkbook(100);
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setFontHeight((short) 200);
+
+        CellStyle h = workbook.createCellStyle();
+        Font f = workbook.createFont();
+        f.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
+        f.setFontHeight((short) 300);
+        h.setFont(f);
+        h.setAlignment(CellStyle.ALIGN_CENTER);
+
+        headerStyle.setFont(font);
+
+        //List<WorkOrder> lwListt = wdao.getWorkOrderByParams(districts.get(i), from, to, queueTypeId, tariffs);
+        SXSSFSheet sheet = (SXSSFSheet) workbook.createSheet("METER REQUESTS");
+
+        Cell info0 = sheet.createRow(2).createCell(0);
+        info0.setCellStyle(h);
+        info0.setCellValue("EKO ELECTRICITY DISTRIBUTION COMPANY (EKEDP)");
+        sheet.addMergedRegion(new CellRangeAddress(
+                2, //first row (0-based)
+                2, //last row  (0-based)
+                0, //first column (0-based)
+                13 //last column  (0-based)
+        ));
+
+        Cell info1 = sheet.createRow(3).createCell(13);
+        info1.setCellValue(startDate + " - " + endDate);
+        info1.setCellStyle(headerStyle);
+
+        Row xheader = sheet.createRow(5);
+        String[] header = {"DISCO", "BUSINESS UNIT", "CUSTOMER ACCOUNT NUMBER", "CUSTOMER ACCOUNT NAME",
+            "ADDRESS", "LANDMARK", "LGA", "NAME OF OCCUPANT", "CONTACT TELEPHONE NO",
+            "E-MAIL ADDRESS", "FEEDER", "DISTRIBUTION TRANSFORMER", "NAME OF UPRISER", "GPS COORDINATE (LAT.,LONG.)",
+            "OLD METER NUMBER", "TYPE OF APPLICATION", "TYPE OF METER", "APPLICATION NUMBER",
+            "TICKET ID", "QUEUE TYPE", "STATUS"};
+        for (int col = 0; col < 21; col++) {
+            Cell cell = xheader.createCell(col);
+            cell.setCellValue(header[col]);
+            cell.setCellStyle(headerStyle);
+            sheet.autoSizeColumn(col);
+        }
+        int rownum = 6;
+        System.out.println("Dates passed :: " + startDate + " End Date :: " + endDate);
+//        List<MeterRequestData> meterRequestData = wfmService.getMeterRequestData(startDate, endDate);
+        List<MeterRequestData> meterRequestData = wfmService.getMeterRequestDataV1(startDate, endDate);
+        
+        
+//         List<MeterRequestData> meterRequestData = wfmService.getMeterRequestDataV1(startDate, endDate);
+        System.out.println("Size of Data returned is ::: " + meterRequestData.size());
+        System.out.println("Processing sheet........");
+        Row row;
+        Cell cell;
+        for (MeterRequestData mrd : meterRequestData) {
+
+            row = sheet.createRow(rownum++);
+            row.createCell(0).setCellValue("EKEDP");
+            row.createCell(1).setCellValue(mrd.getBusinessUnit());
+            row.createCell(2).setCellValue(mrd.getAccountNumber());
+            row.createCell(3).setCellValue(mrd.getAccountName());
+            
+            String fullAddress = mrd.getHouseNumber() + ", " +mrd.getBusstop()+", "+mrd.getAddressLine1()+", "+mrd.getAddressLine2();
+
+            row.createCell(4).setCellValue(fullAddress);          
+            row.createCell(5).setCellValue(mrd.getLandMark());
+            row.createCell(6).setCellValue(mrd.getLgaOfOccupant());
+            row.createCell(7).setCellValue(mrd.getOccupantName());
+            row.createCell(8).setCellValue(mrd.getOccupantPhone());
+            row.createCell(9).setCellValue(mrd.getEmailAddress());
+            row.createCell(10).setCellValue(mrd.getFeeder());
+            row.createCell(11).setCellValue(mrd.getDistributionTransformer());
+            row.createCell(12).setCellValue(mrd.getUpriser());
+            row.createCell(13).setCellValue(mrd.getGpsCoordinate());
+            row.createCell(14).setCellValue(mrd.getOldMeterNumber());
+            row.createCell(15).setCellValue(mrd.getTypeOfApplication());
+            row.createCell(16).setCellValue(mrd.getTypeOfMeter());
+            row.createCell(17).setCellValue(mrd.getApplicationNumber());
+            row.createCell(18).setCellValue(mrd.getTicketId());
+
+            if (mrd.getTicketId() != null) {
+                WorkOrder workOrder = wfmService.findWorkOrderbyTicketId(Integer.parseInt(mrd.getTicketId()));
+                row.createCell(19).setCellValue(workOrder.getQueueTypeId().getName());
+                row.createCell(20).setCellValue(workOrder.getCurrentStatus());
+//                row.createCell(20).setCellValue(mrd.getTicketStatus());
+            }
+        }
+        String localfile = "MAP_Report_" + System.currentTimeMillis() + ".xlsx";
+        String report = "/var/files/email/" + localfile;
+//        String report = "C:/var/files/email/" + localfile;
+        FileOutputStream outputStream = new FileOutputStream(report);
+        workbook.write(outputStream);
+        outputStream.flush();
+        outputStream.close();
+
+        System.out.println("File is " + report);
+        long ended = System.currentTimeMillis();
+
+        System.out.println("Total processing time ::: " + ((ended - started) / 1000));
+        emm.sendAnEmail("a12wq_minions", "MAP Report Download", email, "Your MAP report is now ready. Please find attached the requested report", localfile, null);
+
+    }
 
 }
